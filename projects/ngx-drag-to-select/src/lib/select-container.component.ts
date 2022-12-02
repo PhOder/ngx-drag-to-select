@@ -62,6 +62,7 @@ import {
   getRelativeMousePosition,
   getMousePosition,
   hasMinimumSize,
+  boxIncluded,
 } from './utils';
 import { KeyboardEventsService } from './keyboard-events.service';
 import { DTS_SELECT_CONTAINER } from './tokens';
@@ -98,6 +99,10 @@ export class SelectContainerComponent implements AfterViewInit, OnDestroy, Selec
   @Input() disableRangeSelection = false;
   @Input() selectMode = false;
   @Input() selectWithShortcut = false;
+  /**
+   * Configure if an items' bounding box needs to intersect or to be fully included in the select box.
+   */
+  @Input() intersectionMode: 'intersection' | 'included' = 'intersection';
 
   @Input()
   @HostBinding('class.dts-custom')
@@ -533,7 +538,10 @@ export class SelectContainerComponent implements AfterViewInit, OnDestroy, Selec
   }
 
   private _normalSelectionMode(selectBox: BoundingBox, item: SelectItemDirective, event: Event) {
-    const inSelection = boxIntersects(selectBox, item.getBoundingClientRect());
+    const inSelection =
+      this.intersectionMode === 'intersection'
+        ? boxIntersects(selectBox, item.getBoundingClientRect())
+        : boxIncluded(selectBox, item.getBoundingClientRect());
 
     const shouldAdd = inSelection && !item.selected && !this.shortcuts.removeFromSelection(event);
 
@@ -549,7 +557,10 @@ export class SelectContainerComponent implements AfterViewInit, OnDestroy, Selec
   }
 
   private _extendedSelectionMode(selectBox, item: SelectItemDirective, event: Event) {
-    const inSelection = boxIntersects(selectBox, item.getBoundingClientRect());
+    const inSelection =
+      this.intersectionMode === 'intersection'
+        ? boxIntersects(selectBox, item.getBoundingClientRect())
+        : boxIncluded(selectBox, item.getBoundingClientRect());
 
     const shoudlAdd =
       (inSelection && !item.selected && !this.shortcuts.removeFromSelection(event) && !this._tmpItems.has(item)) ||
