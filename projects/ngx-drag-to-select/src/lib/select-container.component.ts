@@ -103,6 +103,7 @@ export class SelectContainerComponent implements AfterViewInit, OnDestroy, Selec
    * Configure if an items' bounding box needs to intersect or to be fully included in the select box.
    */
   @Input() intersectionMode: 'intersection' | 'included' = 'intersection';
+  @Input() excludeCssClass = 'dts-select-exclude';
 
   @Input()
   @HostBinding('class.dts-custom')
@@ -167,6 +168,7 @@ export class SelectContainerComponent implements AfterViewInit, OnDestroy, Selec
       const mousedown$ = fromEvent<MouseEvent>(this.host, 'mousedown').pipe(
         filter((event) => event.button === 0), // only emit left mouse
         filter(() => !this.disabled),
+        filter((event) => this._isClickOutsideExcludedElement(event.target)),
         filter((event) => this.selectOnClick || this._isClickOutsideSelectableItem(event.target)),
         tap((event) => this._onMouseDown(event)),
         share()
@@ -694,5 +696,14 @@ export class SelectContainerComponent implements AfterViewInit, OnDestroy, Selec
     if (this._selectableItemsNative.includes(element)) return false;
 
     return this._isClickOutsideSelectableItem(element.parentElement);
+  }
+
+  private _isClickOutsideExcludedElement(element: EventTarget): boolean {
+    if (!(element instanceof HTMLElement)) return false;
+
+    if (element === this.host) return true;
+    if (element.classList.contains(this.excludeCssClass)) return false;
+
+    return this._isClickOutsideExcludedElement(element.parentElement);
   }
 }
